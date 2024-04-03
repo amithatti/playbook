@@ -1,0 +1,39 @@
+---
+- name: operations
+  hosts: demo
+  user: ansible
+  become: yes
+  connection: ssh
+  tasks:
+    - name: Update system
+      shell: sudo yum update -y
+
+    - name: Check docker service
+      command: systemctl is-active docker
+      register: docker_service_status
+      ignore_errors: true
+
+    - name: Install docker
+      shell: sudo yum install docker -y
+
+    - name: Docker version
+      shell: docker --version
+
+    - name: Pull nginx image
+      shell: docker pull nginx
+
+    - name: Run a container
+      shell: docker run -it -d nginx
+      register: container_id
+      ignore_errors: true
+
+    - name: Docker login
+      shell: docker login -u username -p password
+      when: container_id is succeeded
+
+    - name: Take snapshot of container
+      shell: docker commit {{ container_id.stdout }} username/repositaty_name
+      when: container_id is succeeded
+
+    - name: Push snapshot to Docker Hub
+      shell: docker push username/repositaty_name
